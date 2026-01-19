@@ -1,1 +1,6 @@
-22CG031930 
+Name: Omeike Raphael
+Matric Number: 22CG031930
+Machine Learning Algorithm Used: Logistic Regression
+Model persistence method used: Joblib
+Live URL: https://[your-app-name].streamlit.app
+GitHub repository link: https://github.com/[your-username]/BreastCancer_Project_yourName_matricNo
