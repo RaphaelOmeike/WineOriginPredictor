@@ -1,44 +1,27 @@
-from flask import Flask, request, jsonify, render_template
-import tensorflow as tf
+import streamlit as st
+import joblib
 import numpy as np
-import pickle
 
-app = Flask(__name__)
+# Load the saved model and scaler from the subfolder
+model = joblib.load('model/wine_cultivar_model.pkl')
+scaler = joblib.load('model/scaler.pkl')
 
-model = tf.keras.models.load_model('wine_model.keras', compile=False)
-with open('wine_scaler.pkl', 'rb') as f:
-    scaler = pickle.load(f)
+st.title("🍷 Wine Cultivar Prediction")
 
-# Human-readable names for the cultivators
-CULTIVATORS = ["Barolo", "Grignolino", "Barbera"]
+# User inputs
+col1, col2 = st.columns(2)
+with col1:
+    alc = st.number_input("Alcohol", 11.0, 15.0, 13.0)
+    mag = st.number_input("Magnesium", 70.0, 160.0, 100.0)
+    flav = st.number_input("Flavanoids", 0.0, 5.0, 2.0)
+with col2:
+    col_int = st.number_input("Color Intensity", 1.0, 13.0, 5.0)
+    hue = st.number_input("Hue", 0.0, 2.0, 1.0)
+    pro = st.number_input("Proline", 200.0, 1700.0, 700.0)
 
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/predict', methods=['POST'])
-def predict():
-    try:
-        data = request.get_json()
-        # The dataset has 13 features; for simplicity, we'll take the first 4 key ones
-        # and fill the rest with average values for the demo
-        user_input = [float(data[f]) for f in ['alcohol', 'malic_acid', 'ash', 'alcalinity']]
-        full_input = user_input + [13.0] * 9 # Padding remaining 9 features
-        
-        raw_input = np.array([full_input])
-        scaled_input = scaler.transform(raw_input)
-        
-        # Get probabilities for all 3 classes
-        predictions = model.predict(scaled_input)
-        class_index = np.argmax(predictions) # Pick the highest probability index
-        
-        return jsonify({
-            'success': True,
-            'origin': CULTIVATORS[class_index],
-            'confidence': f"{np.max(predictions) * 100:.1f}%"
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
-
-if __name__ == '__main__':
-    app.run(debug=True)
+if st.button("Predict Origin"):
+    inputs = np.array([[alc, mag, flav, col_int, hue, pro]])
+    scaled_inputs = scaler.transform(inputs)
+    prediction = model.predict(scaled_inputs)
+    
+    st.success(f"Result: Cultivar {prediction[0] + 1}")
